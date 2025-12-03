@@ -2,6 +2,7 @@ from PySide6 import QtWidgets, QtCore
 from PIL import Image
 import os
 from concurrent.futures import ThreadPoolExecutor
+import sys
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -10,14 +11,35 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Picture Converter")
-        self.label = QtWidgets.QLabel("Drop images here")
-        self.setCentralWidget(self.label)
-        self.setAcceptDrops(True)
+        self.main_box = QtWidgets.QVBoxLayout()
 
+        self.label = QtWidgets.QLabel("Drop images here")
+
+        self.main_box.addWidget(self.label)
+        self.setAcceptDrops(True)
+        self.setGeometry(100, 100, 700, 500)
+
+        # progress signal
         self.progress.connect(self.on_progress)
+
+        # Add menu
+        menubar = self.menuBar()
+        file_menu = menubar.addMenu("&File")
+        info_menu = menubar.addMenu("&Infos")
+        about_action = info_menu.addAction("About")
+        about_action.triggered.connect(self.show_about_dialog)
+
+        self.text_output = QtWidgets.QTextEdit()
+        self.text_output.setReadOnly(True)
+        self.text_output.setTextBackgroundColor("pink")
+        self.main_box.addWidget(self.text_output)
 
         # Create a threadpool that lives during the whole app
         self.executor = ThreadPoolExecutor(max_workers=8)
+
+        widget = QtWidgets.QWidget()
+        widget.setLayout(self.main_box)
+        self.setCentralWidget(widget)
 
     def dragEnterEvent(self, e):
         e.accept()
@@ -26,7 +48,7 @@ class MainWindow(QtWidgets.QMainWindow):
         files = [url.toLocalFile() for url in e.mimeData().urls()]
 
         for f in files:
-            self.executor.submit(self.worker, f, 800)
+            self.executor.submit(self.worker, f, 2048)
 
     def worker(self, file_path, max_dim):
         """Runs inside a worker thread."""
@@ -35,7 +57,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def on_progress(self, msg):
         """Runs in main thread → UI is safe."""
-        self.label.setText(msg)
+        self.text_output.insertHtml(
+            f"<span style='font-weight: bold; color : darkgreen;'>Converted:</span> {msg}<br>"
+        )
 
     def convert_image_file(self, file_path: str, max_dim: int = 2048):
 
@@ -58,11 +82,23 @@ class MainWindow(QtWidgets.QMainWindow):
 
             im.save(path + ".webp", "webp", quality=80)
 
-        return f"Converted: {file_path}"
+        return f"{file_path}"
+
+    def show_about_dialog(self):
+        msg = """
+Picture Converter
+Version: 0.1.0
+Author : gui2one
+        """
+        QtWidgets.QMessageBox.about(self, "About", msg)
 
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication([])
+    app = QtWidgets.QApplication(sys.argv)
+    app.setStyle("Dark")
     window = MainWindow()
+    window.setStyleSheet(
+        "QTextEdit { background-color: rgb(10, 10, 10);  color : white;}"
+    )
     window.show()
     app.exec()
