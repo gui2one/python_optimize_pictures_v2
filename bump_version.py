@@ -1,7 +1,21 @@
 from pathlib import Path
 
 
-def read_version(setup_file: Path) -> list[int]:
+def read_version_truth():
+    version_str = ""
+    with open("app_version.txt", "r") as f:
+        version_str = f.read().strip()
+
+    return [int(x) for x in version_str.split(".")]
+
+
+def bump_version_truth():
+    version_ints = read_version_truth()
+    with open("app_version.txt", "w") as f:
+        f.write(f"{version_ints[0]}.{version_ints[1]}.{version_ints[2] + 1}")
+
+
+def read_version_in_ISS_file(setup_file: Path, version_line_pattern: str) -> list[int]:
     lines = []
     with open(setup_file, "r") as f:
         lines = f.readlines()
@@ -15,9 +29,10 @@ def read_version(setup_file: Path) -> list[int]:
     raise Exception(f"Could not find version line in {setup_file}")
 
 
-def bump_version(setup_file: Path):
-    version_ints = read_version(setup_file)
-    version_ints[2] += 1
+def write_version_in_ISS_file(setup_file: Path, version_line_pattern: str):
+    # version_ints = read_version_in_ISS_file(setup_file, version_line_pattern)
+    version_ints = read_version_truth()
+
     with open(setup_file, "r") as f:
         lines = f.readlines()
 
@@ -35,6 +50,8 @@ def bump_version(setup_file: Path):
     with open(setup_file, "w") as f:
         f.writelines(modified_lines)
 
+    return version_ints
+
 
 if __name__ == "__main__":
 
@@ -43,4 +60,7 @@ if __name__ == "__main__":
 
     version_line_pattern = "#define MyAppVersion"
 
-    bump_version(setup_file)
+    bump_version_truth()
+    ints = write_version_in_ISS_file(setup_file, version_line_pattern)
+
+    print(f"new Version : {ints[0]}.{ints[1]}.{ints[2]}")
