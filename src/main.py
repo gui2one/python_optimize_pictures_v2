@@ -1,10 +1,13 @@
-from PySide6 import QtWidgets, QtCore
+from PySide6 import QtWidgets, QtCore, QtGui
 from PIL import Image
 import os
 from concurrent.futures import ThreadPoolExecutor
 import sys
 
 styles = """
+MainWindow[dragActive="true"]{
+    background-color : orange;
+}
 QTextEdit { background-color: rgb(10, 10, 10);  color : white;}
 QLabel#drop_label{
     font-size : 20px;
@@ -53,9 +56,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(widget)
 
     def dragEnterEvent(self, e):
+        self.setProperty("dragActive", "true")
         e.accept()
+        self.style().unpolish(self)
+        self.style().polish(self)
+
+    def dragLeaveEvent(self, event):
+        self.setProperty("dragActive", "false")
+        self.style().unpolish(self)
+        self.style().polish(self)
 
     def dropEvent(self, e):
+        self.setProperty("dragActive", "false")
+        self.style().unpolish(self)
+        self.style().polish(self)
         files = [url.toLocalFile() for url in e.mimeData().urls()]
 
         for f in files:
