@@ -1,4 +1,5 @@
 env/
 build/
 dist/
+installer/
 __pycache__

@@ -21,7 +21,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Picture Converter")
+        self.setWindowTitle("Picture Optimizer")
         self.main_box = QtWidgets.QVBoxLayout()
 
         self.label = QtWidgets.QLabel("Drop images here")

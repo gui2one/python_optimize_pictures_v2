@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ["src\\main.py"],
+    ["src/main.py"],
     pathex=[],
     binaries=[],
     datas=[],
@@ -21,7 +21,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name="gui2one_picture_converter",
+    name="picture_optimizer",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -40,5 +40,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name="main",
+    name="picture_optimizer",
 )
