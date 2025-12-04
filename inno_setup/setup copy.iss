@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Picture Optimizer"
-#define MyAppVersion "0.1.6"
+#define MyAppVersion "0.1.3"
 #define MyAppPublisher "gui2one Software"
 #define MyAppExeName "picture_optimizer.exe"
 #define ProjectRoot ".." 

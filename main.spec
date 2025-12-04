@@ -1,5 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import os, sys
+from pathlib import Path
+
+root = os.path.dirname(os.path.abspath(__name__))
 
 a = Analysis(
     ["src/main.py"],
@@ -32,6 +36,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=str(Path(root) / "res/picture_optimizer.ico"),
 )
 coll = COLLECT(
     exe,
