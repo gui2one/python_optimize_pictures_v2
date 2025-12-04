@@ -82,6 +82,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def on_progress(self, msg):
         """Runs in main thread → UI is safe."""
+        print(msg)
+        if msg == "":
+            self.text_output.insertHtml(
+                f"<span style='font-weight: bold; color : red;'>Unsupported File Format</span><br>"
+            )
+            return
+
         self.text_output.insertHtml(
             f"<span style='font-weight: bold; color : darkgreen;'>Converted:</span> {msg}<br>"
         )
@@ -105,9 +112,12 @@ class MainWindow(QtWidgets.QMainWindow):
             if im.size[0] > max_dim or im.size[1] > max_dim:
                 im = im.resize((width, height))
 
-            im.save(path + ".webp", "webp", quality=80)
+            new_path = path + ".webp"
 
-        return f"{file_path}"
+            im.save(new_path, "webp", quality=80)
+
+            return new_path
+        return ""
 
     def show_about_dialog(self):
         msg = """
