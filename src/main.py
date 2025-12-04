@@ -4,6 +4,14 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 import sys
 
+styles = """
+QTextEdit { background-color: rgb(10, 10, 10);  color : white;}
+QLabel#drop_label{
+    font-size : 20px;
+    color : black;
+}
+"""
+
 
 class MainWindow(QtWidgets.QMainWindow):
     progress = QtCore.Signal(str)
@@ -14,6 +22,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.main_box = QtWidgets.QVBoxLayout()
 
         self.label = QtWidgets.QLabel("Drop images here")
+        self.label.setObjectName("drop_label")
+        self.label.setAlignment(QtCore.Qt.AlignCenter)
+        self.label.setFixedHeight(200)
 
         self.main_box.addWidget(self.label)
         self.setAcceptDrops(True)
@@ -97,8 +108,6 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     app.setStyle("Dark")
     window = MainWindow()
-    window.setStyleSheet(
-        "QTextEdit { background-color: rgb(10, 10, 10);  color : white;}"
-    )
+    window.setStyleSheet(styles)
     window.show()
     app.exec()
