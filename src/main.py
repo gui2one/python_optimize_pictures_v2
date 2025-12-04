@@ -98,7 +98,7 @@ class MainWindow(QtWidgets.QMainWindow):
         exts = ["png", "jpg", "jpeg", "gif", "bmp", "webp"]
         path, ext = os.path.splitext(file_path)
 
-        if ext.replace(".", "") in exts:
+        if ext.replace(".", "").lower() in exts:
             im = Image.open(file_path)
             aspect = im.size[0] / float(im.size[1])
 
