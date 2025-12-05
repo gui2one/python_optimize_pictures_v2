@@ -21,8 +21,46 @@ def load_version_string():
         return f.read().strip()
 
 
+class DimensionSelector(QtWidgets.QWidget):
+    min_val: int
+    max_val: int
+    cur_val: int
+    val_changed = QtCore.Signal(int)
+
+    def __init__(
+        self,
+        parent=None,
+        start_val=2048,
+        max_val=8096,
+        min_val=16,
+        label: str = "No label !!!",
+    ):
+        super().__init__(parent)
+
+        self.max_val = max_val
+        self.min_val = min_val
+        self.cur_val = start_val
+        self.layout = QtWidgets.QHBoxLayout()
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.layout)
+        self.label = QtWidgets.QLabel(label)
+        self.layout.addWidget(self.label)
+
+        self.dim_input = QtWidgets.QLineEdit(str(self.cur_val))
+        self.layout.addWidget(self.dim_input)
+        self.dim_input.setValidator(QtGui.QIntValidator(self.min_val, self.max_val))
+        self.dim_input.textChanged.connect(self.set_value)
+
+    def set_value(self, value):
+        self.cur_val = int(value)
+        self.val_changed.emit(self.cur_val)
+
+
 class MainWindow(QtWidgets.QMainWindow):
     progress = QtCore.Signal(str)
+
+    max_dim: int = 2048
+    comp_level: int = 80
 
     def __init__(self):
         super().__init__()
@@ -34,6 +72,28 @@ class MainWindow(QtWidgets.QMainWindow):
         self.label.setObjectName("drop_label")
         self.label.setAlignment(QtCore.Qt.AlignCenter)
         self.label.setFixedHeight(200)
+
+        self.dim_selector = DimensionSelector(
+            self,
+            min_val=16,
+            max_val=8096,
+            start_val=self.max_dim,
+            label="Max Dimension",
+        )
+        self.dim_selector.val_changed.connect(self.on_max_dim_changed)
+        self.main_box.addWidget(self.dim_selector)
+
+        self.comp_level_selector_selector = DimensionSelector(
+            self,
+            min_val=0,
+            max_val=100,
+            start_val=self.comp_level,
+            label="Compression Level ( 0 - 100 )",
+        )
+        self.comp_level_selector_selector.val_changed.connect(
+            self.on_comp_level_changed
+        )
+        self.main_box.addWidget(self.comp_level_selector_selector)
 
         self.main_box.addWidget(self.label)
         self.setAcceptDrops(True)
@@ -61,6 +121,12 @@ class MainWindow(QtWidgets.QMainWindow):
         widget.setLayout(self.main_box)
         self.setCentralWidget(widget)
 
+    def on_max_dim_changed(self, max_dim):
+        self.max_dim = max_dim
+
+    def on_comp_level_changed(self, comp_level):
+        self.comp_level = comp_level
+
     def dragEnterEvent(self, e):
         self.setProperty("dragActive", "true")
         e.accept()
@@ -79,16 +145,15 @@ class MainWindow(QtWidgets.QMainWindow):
         files = [url.toLocalFile() for url in e.mimeData().urls()]
 
         for f in files:
-            self.executor.submit(self.worker, f, 2048)
+            self.executor.submit(self.worker, f, self.max_dim, self.comp_level)
 
-    def worker(self, file_path, max_dim):
+    def worker(self, file_path, max_dim, comp_level=80):
         """Runs inside a worker thread."""
-        result = self.convert_image_file(file_path, max_dim)
+        result = self.convert_image_file(file_path, max_dim, comp_level)
         self.progress.emit(result)  # Update UI safely
 
     def on_progress(self, msg):
         """Runs in main thread → UI is safe."""
-        print(msg)
         if msg == "":
             self.text_output.insertHtml(
                 f"<span style='font-weight: bold; color : white; background-color:red;'>Unsupported File Format</span><br>"
@@ -98,8 +163,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.text_output.insertHtml(
             f"<span style='font-weight: bold; color : darkgreen;'>Converted:</span> {msg}<br>"
         )
+        self.text_output.moveCursor(QtGui.QTextCursor.End)
 
-    def convert_image_file(self, file_path: str, max_dim: int = 2048):
+    def convert_image_file(
+        self, file_path: str, max_dim: int = 2048, comp_level: int = 80
+    ):
 
         exts = ["png", "jpg", "jpeg", "gif", "bmp", "webp"]
         path, ext = os.path.splitext(file_path)
@@ -120,7 +188,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
             new_path = path + ".webp"
 
-            im.save(new_path, "webp", quality=80)
+            im.save(new_path, "webp", quality=comp_level)
 
             return new_path
         return ""
