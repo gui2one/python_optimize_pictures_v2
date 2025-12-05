@@ -87,7 +87,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     max_dim: int = 2048
     comp_level: int = 80
-    export_formats = ["jpg", "webp"]
+    export_formats = ["webp", "jpeg"]
+    export_format_selected: str
 
     def __init__(self):
         super().__init__()
@@ -96,6 +97,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setAcceptDrops(True)
         self.setGeometry(100, 100, 700, 600)
 
+        self.export_format_selected = self.export_formats[0]
         self.main_box = QtWidgets.QVBoxLayout()
 
         self.dim_selector = DimensionSelector(
@@ -160,8 +162,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.comp_level = comp_level
 
     def on_format_changed(self, index):
-        self.format = self.export_formats[index]
-        print("format changed", self.format)
+
+        self.export_format_selected = self.export_formats[index]
+        # print("format changed", self.export_format_selected)
 
     def dragEnterEvent(self, e):
         self.setProperty("dragActive", "true")
@@ -181,11 +184,26 @@ class MainWindow(QtWidgets.QMainWindow):
         files = [url.toLocalFile() for url in e.mimeData().urls()]
 
         for f in files:
-            self.executor.submit(self.worker, f, self.max_dim, self.comp_level)
+            # print(self.export_format_selected)
+            self.executor.submit(
+                self.worker,
+                f,
+                self.max_dim,
+                self.export_format_selected,
+                self.comp_level,
+            )
 
-    def worker(self, file_path, max_dim, comp_level=80):
+    def worker(
+        self,
+        file_path,
+        max_dim,
+        format,
+        comp_level=80,
+    ):
+        # print("worker starting ....")
         """Runs inside a worker thread."""
-        result = self.convert_image_file(file_path, max_dim, comp_level)
+        result = self.convert_image_file(file_path, max_dim, comp_level, format=format)
+
         self.progress.emit(result)  # Update UI safely
 
     def on_progress(self, msg):
@@ -202,15 +220,18 @@ class MainWindow(QtWidgets.QMainWindow):
         self.text_output.moveCursor(QtGui.QTextCursor.End)
 
     def convert_image_file(
-        self, file_path: str, max_dim: int = 2048, comp_level: int = 80
+        self, file_path: str, max_dim: int = 2048, comp_level: int = 80, format="webp"
     ):
-
         exts = ["png", "jpg", "jpeg", "gif", "bmp", "webp"]
         path, ext = os.path.splitext(file_path)
 
         if ext.replace(".", "").lower() in exts:
+
             im = Image.open(file_path)
             aspect = im.size[0] / float(im.size[1])
+
+            if im.mode in ("RGBA", "P") and format == "jpeg":
+                im = im.convert("RGB")
 
             if aspect > 1:
                 width = max_dim
@@ -222,9 +243,12 @@ class MainWindow(QtWidgets.QMainWindow):
             if im.size[0] > max_dim or im.size[1] > max_dim:
                 im = im.resize((width, height))
 
-            new_path = path + ".webp"
-
-            im.save(new_path, "webp", quality=comp_level)
+            new_path = path + "_OPTIMIZED." + format
+            # print("new_path : ", new_path)
+            try:
+                im.save(new_path, quality=comp_level, optimize=True, format=format)
+            except Exception as e:
+                print(e)
 
             return new_path
         return ""
