@@ -58,22 +58,45 @@ class DimensionSelector(QtWidgets.QWidget):
         self.val_changed.emit(self.cur_val)
 
 
+class FormatSelector(QtWidgets.QWidget):
+    val_changed = QtCore.Signal(int)
+
+    def __init__(self, parent=None, items: list[str] = ["jpg", "webp"]):
+        super().__init__(parent)
+        self.hbox = QtWidgets.QHBoxLayout()
+        self.hbox.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(self.hbox)
+        self.combo = QtWidgets.QComboBox()
+        self.combo.addItems(items)
+        self.combo.setFixedWidth(100)
+        self.combo.currentIndexChanged.connect(self.on_format_changed)
+        self.hbox.addWidget(self.combo)
+
+        self.label = QtWidgets.QLabel("export Format")
+        self.hbox.addWidget(self.label)
+
+    def add_items(self, items: list[str]):
+        self.combo.addItems(items)
+
+    def on_format_changed(self, index):
+        self.val_changed.emit(index)
+
+
 class MainWindow(QtWidgets.QMainWindow):
     progress = QtCore.Signal(str)
 
     max_dim: int = 2048
     comp_level: int = 80
+    export_formats = ["jpg", "webp"]
 
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Picture Optimizer")
         self.setWindowIcon(QtGui.QIcon("res/picture_optimizer.ico"))
-        self.main_box = QtWidgets.QVBoxLayout()
+        self.setAcceptDrops(True)
+        self.setGeometry(100, 100, 700, 600)
 
-        self.label = QtWidgets.QLabel("Drop images here")
-        self.label.setObjectName("drop_label")
-        self.label.setAlignment(QtCore.Qt.AlignCenter)
-        self.label.setFixedHeight(70)
+        self.main_box = QtWidgets.QVBoxLayout()
 
         self.dim_selector = DimensionSelector(
             self,
@@ -97,9 +120,16 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.main_box.addWidget(self.comp_level_selector_selector)
 
+        self.format_selector = FormatSelector(self, self.export_formats)
+        self.format_selector.val_changed.connect(self.on_format_changed)
+        self.main_box.addWidget(self.format_selector)
+
+        self.label = QtWidgets.QLabel("Drop images here")
+        self.label.setObjectName("drop_label")
+        self.label.setAlignment(QtCore.Qt.AlignCenter)
+        self.label.setFixedHeight(70)
+
         self.main_box.addWidget(self.label)
-        self.setAcceptDrops(True)
-        self.setGeometry(100, 100, 700, 600)
 
         # progress signal
         self.progress.connect(self.on_progress)
@@ -128,6 +158,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def on_comp_level_changed(self, comp_level):
         self.comp_level = comp_level
+
+    def on_format_changed(self, index):
+        self.format = self.export_formats[index]
+        print("format changed", self.format)
 
     def dragEnterEvent(self, e):
         self.setProperty("dragActive", "true")
