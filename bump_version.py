@@ -1,4 +1,5 @@
 from pathlib import Path
+import sys
 
 
 def read_version_truth():
@@ -15,22 +16,30 @@ def bump_version_truth():
         f.write(f"{version_ints[0]}.{version_ints[1]}.{version_ints[2] + 1}")
 
 
-def read_version_in_ISS_file(setup_file: Path, version_line_pattern: str) -> list[int]:
+def get_version_variable_name_in_ISS_file(setup_file: Path):
+    # find AppVersion= line
     lines = []
     with open(setup_file, "r") as f:
         lines = f.readlines()
 
+    var_name = None
     for line in lines:
-        if line.startswith(version_line_pattern):
-            strings = line.split('"')[1].split(".")
-            ints = [int(strings[0]), int(strings[1]), int(strings[2])]
-            return ints
+        if line.startswith("AppVersion="):
+            #  extracting "MyAppVersion" from pattern -> AppVersion={#MyAppVersion}
+            var_part = line.split("=")[1].split("{#")[1].replace("}", "")
+            if len(var_part) > 0:
+                var_name = var_part
+                break
 
-    raise Exception(f"Could not find version line in {setup_file}")
+    if var_name is None:
+        raise Exception(f"Could not find AppVersion line in {setup_file}")
+
+    return var_name
 
 
-def write_version_in_ISS_file(setup_file: Path, version_line_pattern: str):
-    # version_ints = read_version_in_ISS_file(setup_file, version_line_pattern)
+def write_version_in_ISS_file(setup_file: Path):
+    var_name = get_version_variable_name_in_ISS_file(setup_file)
+    version_line_pattern = f"#define {var_name}".strip()
     version_ints = read_version_truth()
 
     with open(setup_file, "r") as f:
@@ -58,9 +67,6 @@ if __name__ == "__main__":
     root = Path(__file__).parent
     setup_file = root / "inno_setup" / "setup.iss"
 
-    version_line_pattern = "#define MyAppVersion"
-
     bump_version_truth()
-    ints = write_version_in_ISS_file(setup_file, version_line_pattern)
-
+    ints = write_version_in_ISS_file(setup_file)
     print(f"new Version : {ints[0]}.{ints[1]}.{ints[2]}")
