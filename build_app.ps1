@@ -9,4 +9,4 @@ $exe = "./dist/$app_name/$app_name.exe"
 Copy-Item -Recurse -Path "./res" -Destination "./dist/$app_name/res"
 Copy-Item -Path "./app_version.txt" -Destination "./dist/$app_name"
 
-& $exe
+# & $exe

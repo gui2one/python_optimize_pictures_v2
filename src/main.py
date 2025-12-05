@@ -58,6 +58,38 @@ class DimensionSelector(QtWidgets.QWidget):
         self.val_changed.emit(self.cur_val)
 
 
+class SliderWidget(QtWidgets.QWidget):
+    valueChanged = QtCore.Signal(int)
+
+    def __init__(self, parent=None, label: str = "No label !!!"):
+        super().__init__(parent)
+        self.main_box = QtWidgets.QVBoxLayout()
+        self.main_box.setContentsMargins(0, 0, 0, 0)
+
+        self.hbox = QtWidgets.QHBoxLayout()
+
+        self.label = QtWidgets.QLabel(label)
+        self.main_box.addWidget(self.label)
+
+        self.setLayout(self.main_box)
+
+        self.slider = QtWidgets.QSlider(self)
+        self.slider.setOrientation(QtCore.Qt.Horizontal)
+        self.slider.setFixedWidth(200)
+        self.slider.setRange(20, 100)
+        self.slider.setValue(80)
+        self.slider.valueChanged.connect(self.set_value)
+        self.hbox.addWidget(self.slider)
+
+        self.value_label = QtWidgets.QLabel(str(self.slider.value()))
+        self.hbox.addWidget(self.value_label)
+        self.main_box.addLayout(self.hbox)
+
+    def set_value(self, value):
+        self.value_label.setText(str(value))
+        self.valueChanged.emit(value)
+
+
 class FormatSelector(QtWidgets.QWidget):
     val_changed = QtCore.Signal(int)
 
@@ -72,7 +104,7 @@ class FormatSelector(QtWidgets.QWidget):
         self.combo.currentIndexChanged.connect(self.on_format_changed)
         self.hbox.addWidget(self.combo)
 
-        self.label = QtWidgets.QLabel("export Format")
+        self.label = QtWidgets.QLabel("Export Format")
         self.hbox.addWidget(self.label)
 
     def add_items(self, items: list[str]):
@@ -80,6 +112,14 @@ class FormatSelector(QtWidgets.QWidget):
 
     def on_format_changed(self, index):
         self.val_changed.emit(index)
+
+
+def Separator():
+    frame = QtWidgets.QFrame()
+    frame.setFrameShape(QtWidgets.QFrame.HLine)
+    frame.setFrameShadow(QtWidgets.QFrame.Raised)
+    frame.setContentsMargins(0, 0, 0, 0)
+    return frame
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -99,7 +139,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.export_format_selected = self.export_formats[0]
         self.main_box = QtWidgets.QVBoxLayout()
-
+        self.params_box = QtWidgets.QVBoxLayout()
+        self.top_hbox = QtWidgets.QHBoxLayout()
+        self.top_hbox.addLayout(self.params_box)
+        self.main_box.addLayout(self.top_hbox)
         self.dim_selector = DimensionSelector(
             self,
             min_val=16,
@@ -108,30 +151,31 @@ class MainWindow(QtWidgets.QMainWindow):
             label="Max Dimension",
         )
         self.dim_selector.val_changed.connect(self.on_max_dim_changed)
-        self.main_box.addWidget(self.dim_selector)
+        self.params_box.addWidget(self.dim_selector)
 
-        self.comp_level_selector_selector = DimensionSelector(
-            self,
-            min_val=0,
-            max_val=100,
-            start_val=self.comp_level,
-            label="Compression Level ( 0 - 100 )",
-        )
-        self.comp_level_selector_selector.val_changed.connect(
-            self.on_comp_level_changed
-        )
-        self.main_box.addWidget(self.comp_level_selector_selector)
+        separator = Separator()
+        self.params_box.addWidget(separator)
+
+        self.comp_level_selector2 = SliderWidget(self, label="Compression Level")
+        self.comp_level_selector2.valueChanged.connect(self.on_comp_level_changed)
+        self.params_box.addWidget(self.comp_level_selector2)
+
+        separator = Separator()
+        self.params_box.addWidget(separator)
 
         self.format_selector = FormatSelector(self, self.export_formats)
         self.format_selector.val_changed.connect(self.on_format_changed)
-        self.main_box.addWidget(self.format_selector)
+        self.params_box.addWidget(self.format_selector)
+
+        separator = Separator()
+        self.params_box.addWidget(separator)
 
         self.label = QtWidgets.QLabel("Drop images here")
         self.label.setObjectName("drop_label")
         self.label.setAlignment(QtCore.Qt.AlignCenter)
-        self.label.setFixedHeight(70)
+        self.label.setFixedSize(400, 100)
 
-        self.main_box.addWidget(self.label)
+        self.top_hbox.addWidget(self.label)
 
         # progress signal
         self.progress.connect(self.on_progress)
