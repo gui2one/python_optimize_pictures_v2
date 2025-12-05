@@ -16,6 +16,11 @@ QLabel#drop_label{
 """
 
 
+def load_version_string():
+    with open("app_version.txt", "r") as f:
+        return f.read().strip()
+
+
 class MainWindow(QtWidgets.QMainWindow):
     progress = QtCore.Signal(str)
 
@@ -86,7 +91,7 @@ class MainWindow(QtWidgets.QMainWindow):
         print(msg)
         if msg == "":
             self.text_output.insertHtml(
-                f"<span style='font-weight: bold; color : red;'>Unsupported File Format</span><br>"
+                f"<span style='font-weight: bold; color : white; background-color:red;'>Unsupported File Format</span><br>"
             )
             return
 
@@ -121,9 +126,9 @@ class MainWindow(QtWidgets.QMainWindow):
         return ""
 
     def show_about_dialog(self):
-        msg = """
+        msg = f"""
 Picture Converter
-Version: 0.1.0
+Version: {load_version_string()}
 Author : gui2one
         """
         QtWidgets.QMessageBox.about(self, "About", msg)
