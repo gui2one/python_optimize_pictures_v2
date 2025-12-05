@@ -43,13 +43,15 @@ class DimensionSelector(QtWidgets.QWidget):
         self.layout = QtWidgets.QHBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.layout)
-        self.label = QtWidgets.QLabel(label)
-        self.layout.addWidget(self.label)
 
-        self.dim_input = QtWidgets.QLineEdit(str(self.cur_val))
+        self.dim_input = QtWidgets.QLineEdit(str(self.cur_val), maxLength=4)
+        self.dim_input.setFixedWidth(100)
         self.layout.addWidget(self.dim_input)
         self.dim_input.setValidator(QtGui.QIntValidator(self.min_val, self.max_val))
         self.dim_input.textChanged.connect(self.set_value)
+
+        self.label = QtWidgets.QLabel(label)
+        self.layout.addWidget(self.label)
 
     def set_value(self, value):
         self.cur_val = int(value)
@@ -71,7 +73,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.label = QtWidgets.QLabel("Drop images here")
         self.label.setObjectName("drop_label")
         self.label.setAlignment(QtCore.Qt.AlignCenter)
-        self.label.setFixedHeight(200)
+        self.label.setFixedHeight(70)
 
         self.dim_selector = DimensionSelector(
             self,
@@ -97,7 +99,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.main_box.addWidget(self.label)
         self.setAcceptDrops(True)
-        self.setGeometry(100, 100, 700, 500)
+        self.setGeometry(100, 100, 700, 600)
 
         # progress signal
         self.progress.connect(self.on_progress)
